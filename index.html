@@ -23,6 +23,10 @@ body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(180d
 .btn-outline.active{background:rgba(197,165,90,0.15);color:var(--gold);border-color:var(--gold)}
 .err{background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.25);border-radius:5px;padding:6px 10px;font-size:11px;color:#fca5a5;text-align:center;margin-bottom:10px}
 .updated{text-align:center;font-size:9px;color:rgba(245,240,225,0.3);margin-bottom:10px}
+.selbanner{background:linear-gradient(135deg,rgba(197,165,90,0.18),rgba(197,165,90,0.08));border:1.5px solid rgba(197,165,90,0.5);border-radius:6px;padding:8px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.selbanner .seltxt{font-size:13px;color:#C5A55A;font-weight:700;font-family:'DM Sans',sans-serif}
+.selbanner .selbtn{background:none;border:1px solid rgba(197,165,90,0.5);border-radius:4px;color:#C5A55A;font-size:11px;padding:3px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+.selbanner .selbtn:hover{background:rgba(197,165,90,0.15)}
 .mycards{display:grid;gap:6px;margin-bottom:14px}
 .mycard{background:linear-gradient(135deg,rgba(197,165,90,0.12),rgba(197,165,90,0.04));border:1px solid rgba(197,165,90,0.25);border-radius:8px;padding:8px 10px;text-align:center}
 .mycard .name{font-size:9px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;font-weight:600}
@@ -46,19 +50,18 @@ body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(180d
 .mrow .pname.w{font-weight:700;color:var(--green)}
 .mrow .pright{display:flex;align-items:center;gap:3px;flex-shrink:0}
 .mrow .pscore{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600}
-.mrow .pthru{font-size:8px;color:rgba(245,240,225,0.45);font-family:"JetBrains Mono",monospace;background:rgba(245,240,225,0.06);padding:1px 4px;border-radius:3px}
-.mrow .ppct{font-size:7px;color:rgba(245,240,225,0.15);width:18px;text-align:right}
+.mrow .pthru{font-size:9px;color:var(--cream);font-family:'JetBrains Mono',monospace;background:rgba(245,240,225,0.1);padding:1px 5px;border-radius:3px;font-weight:500;white-space:nowrap}
+.mrow .ppct{font-size:7px;color:rgba(245,240,225,0.2);width:20px;text-align:right}
 .neg{color:var(--green)}.pos{color:var(--red)}.even{color:var(--cream)}
 table{width:100%;border-collapse:collapse;font-size:10px}
 thead tr{background:rgba(0,0,0,0.3)}
 th{padding:7px 4px;color:rgba(245,240,225,0.4);font-weight:600;font-size:9px;text-align:center}
 th.team{text-align:left}
 th.sc{color:var(--gold);font-weight:700}
-tbody tr{border-bottom:1px solid rgba(245,240,225,0.03);transition:background 0.15s}
+tbody tr{border-bottom:1px solid rgba(245,240,225,0.03);transition:background 0.15s;cursor:pointer}
 tbody tr.mine{background:rgba(197,165,90,0.08)}
 tbody tr.top3{background:rgba(74,222,128,0.02)}
 tbody tr.sel{background:rgba(197,165,90,0.15)!important;outline:1px solid rgba(197,165,90,0.4)}
-tbody tr{cursor:pointer}
 td{padding:5px 3px;text-align:center;font-size:10px}
 td.rk{font-family:'JetBrains Mono',monospace;color:rgba(245,240,225,0.3)}
 td.rk.top3{color:var(--gold);font-weight:700}
@@ -91,6 +94,7 @@ td.cell{font-size:9px;padding:3px 1px}
 <script type="text/babel">
 const {useState,useEffect,useRef,useCallback}=React;
 
+/* ═══ MATCHUPS ═══ */
 const MM=[
 {n:1,a:"Scottie Scheffler",b:"Rory McIlroy"},
 {n:2,a:"Cameron Young",b:"Tommy Fleetwood"},
@@ -105,6 +109,8 @@ const MM=[
 ];
 const NAMES=[...new Set(MM.flatMap(m=>[m.a,m.b]))];
 const MY=["Bryan Christensen","Virginia Rodgers","Jackson Walsh"];
+
+/* ═══ 53 ENTRIES ═══ */
 const EE=[
 {t:"Bamdon 2",p:["Rory McIlroy","Tommy Fleetwood","Matt Fitzpatrick","Robert MacIntyre","Justin Rose","Chris Gotterup","Sepp Straka","Justin Thomas","Ludvig Aberg","Alex Noren"]},
 {t:"Bandon 1",p:["Scottie Scheffler","Cameron Young","Matt Fitzpatrick","Robert MacIntyre","Xander Schauffele","Chris Gotterup","Hideki Matsuyama","Justin Thomas","Ludvig Aberg","Harris English"]},
@@ -161,211 +167,362 @@ const EE=[
 {t:"Wimbimlimbim",p:["Scottie Scheffler","Tommy Fleetwood","JJ Spaun","Collin Morikawa","Xander Schauffele","Chris Gotterup","Hideki Matsuyama","Justin Thomas","Ludvig Aberg","Harris English"]},
 ];
 
-const nr=n=>n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z]/g,"").toLowerCase();
-const fs=s=>s===0?"E":s>0?"+"+s:""+s;
-const mn=(a,b)=>{const x=nr(a),y=nr(b);if(x===y)return true;const la=nr(a.split(" ").pop()),lb=nr(b.split(" ").pop());return la===lb;};
-const FP=MM.map((_,i)=>{const ac=EE.filter(e=>mn(e.p[i],MM[i].a)).length;return{a:Math.round(ac/EE.length*100),b:Math.round((EE.length-ac)/EE.length*100)};});
+/* ═══ NAME NORMALIZATION ═══
+   Critical: decompose unicode FIRST so Å→A, å→a, é→e, etc.
+   Then strip all non-alpha for comparison key. */
+const norm = n => n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z ]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+const normKey = n => norm(n).replace(/ /g,"");
 
-const ESPN_URL="https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+/* Match names flexibly: full normalized match OR last-name match.
+   Handles "J.J. Spaun" vs "JJ Spaun", unicode Åberg vs Aberg, etc. */
+const mn = (a, b) => {
+  if (normKey(a) === normKey(b)) return true;
+  const lastA = norm(a).split(" ").pop();
+  const lastB = norm(b).split(" ").pop();
+  return lastA === lastB;
+};
 
-function App(){
-  const[gd,setGd]=useState({});
-  const[selE,setSelE]=useState(null);
-  const[loading,setLoading]=useState(false);
-  const[lastUp,setLastUp]=useState(null);
-  const[err,setErr]=useState(null);
-  const[auto,setAuto]=useState(false);
-  const[manual,setManual]=useState(false);
-  const iv=useRef(null);
+/* Field ownership percentages */
+const FP = MM.map((_, i) => {
+  const ac = EE.filter(e => mn(e.p[i], MM[i].a)).length;
+  return { a: Math.round(ac / EE.length * 100), b: Math.round((EE.length - ac) / EE.length * 100) };
+});
 
-  useEffect(()=>{const s=localStorage.getItem("mh2h4");if(s){try{const d=JSON.parse(s);if(d.gd)setGd(d.gd);if(d.lu)setLastUp(d.lu);}catch(e){}};},[]);
-  useEffect(()=>{if(Object.keys(gd).length>0)localStorage.setItem("mh2h4",JSON.stringify({gd,lu:lastUp}));},[gd,lastUp]);
-  useEffect(()=>{if(auto){iv.current=setInterval(fetchS,300000);return()=>clearInterval(iv.current);}else if(iv.current)clearInterval(iv.current);},[auto]);
+/* Format score vs par */
+const fs = s => s === 0 ? "E" : s > 0 ? "+" + s : "" + s;
 
-  const fetchS=useCallback(async()=>{
-    setLoading(true);setErr(null);
-    try{
-      const r=await fetch(ESPN_URL);
-      const data=await r.json();
-      const ev=data.events?.[0];
-      if(!ev){setErr("No active event found on ESPN.");setLoading(false);return;}
-      const comps=ev.competitions?.[0]?.competitors||[];
-      const nd={};
-      comps.forEach(c=>{
-        const name=c.athlete?.displayName||"";
-        const found=NAMES.find(n=>mn(name,n));
-        if(!found)return;
-        const scoreStr=c.score;
-        let score=0;
-        if(scoreStr==="E"||scoreStr==="0")score=0;
-        else if(typeof scoreStr==="string")score=parseInt(scoreStr)||0;
-        else if(typeof scoreStr==="number")score=scoreStr;
-        const status=c.status||{};
-        const cut=status.type?.description||"";
-        let st="active";
-        if(cut.toLowerCase().includes("cut"))st="cut";
-        else if(cut.toLowerCase().includes("wd")||cut.toLowerCase().includes("withdraw"))st="wd";
-        const ls=c.linescores||[];
-        let curRound=1,holesPlayed=0,roundDone=false;
-        for(let ri=ls.length-1;ri>=0;ri--){
-          const rh=ls[ri].linescores||[];
-          const played=rh.filter(h=>h.value!=null).length;
-          if(played>0){curRound=ls[ri].period||ri+1;holesPlayed=played;roundDone=played>=18;break;}
+/* Format thru/round display */
+const fmtThru = (round, thru) => {
+  const r = round || 1;
+  if (thru === 18) return "R" + r + " \u00b7 F";
+  if (thru > 0 && thru < 18) return "R" + r + " \u00b7 " + thru + "h";
+  return "R" + r;
+};
+
+/* ═══ DATAGOLF API ═══ */
+const DG_URL = "https://feeds.datagolf.com/preds/in-play?tour=pga&odds_format=percent&file_format=json&key=1bac751e7af9d758be30c2f87e37";
+
+function App() {
+  const [gd, setGd] = useState({});
+  const [selE, setSelE] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastUp, setLastUp] = useState(null);
+  const [err, setErr] = useState(null);
+  const [auto, setAuto] = useState(false);
+  const [manual, setManual] = useState(false);
+  const iv = useRef(null);
+
+  /* Persist to localStorage */
+  useEffect(() => {
+    const s = localStorage.getItem("mh2h5");
+    if (s) { try { const d = JSON.parse(s); if (d.gd) setGd(d.gd); if (d.lu) setLastUp(d.lu); } catch(e) {} }
+  }, []);
+  useEffect(() => {
+    if (Object.keys(gd).length > 0) localStorage.setItem("mh2h5", JSON.stringify({ gd, lu: lastUp }));
+  }, [gd, lastUp]);
+
+  /* Auto-refresh */
+  useEffect(() => {
+    if (auto) { iv.current = setInterval(fetchS, 300000); return () => clearInterval(iv.current); }
+    else if (iv.current) clearInterval(iv.current);
+  }, [auto]);
+
+  /* ═══ FETCH FROM DATAGOLF ═══ */
+  const fetchS = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const r = await fetch(DG_URL);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const json = await r.json();
+      const players = json.data || json;
+      if (!Array.isArray(players) || players.length === 0) {
+        setErr("No player data from DataGolf. Tournament may not be active yet.");
+        setLoading(false);
+        return;
+      }
+      const nd = {};
+      players.forEach(p => {
+        /* Convert "Last, First" → "First Last" */
+        let name = p.player_name || "";
+        if (name.includes(", ")) {
+          const parts = name.split(", ");
+          name = parts[1] + " " + parts[0];
         }
-        const thru=roundDone?"F":holesPlayed>0?String(holesPlayed):"";
-        nd[nr(found)]={s:score,t:thru,st,rd:curRound};
+        const found = NAMES.find(n => mn(name, n));
+        if (!found) return;
+
+        const score = typeof p.current_score === "number" ? p.current_score : parseInt(p.current_score) || 0;
+        const thru = typeof p.thru === "number" ? p.thru : parseInt(p.thru) || 0;
+        const round = typeof p.round === "number" ? p.round : parseInt(p.round) || 1;
+        const today = typeof p.today === "number" ? p.today : parseInt(p.today) || 0;
+        const pos = (p.current_pos || "").toString();
+
+        let st = "active";
+        if (pos.toUpperCase().includes("CUT")) st = "cut";
+        else if (pos.toUpperCase().includes("WD")) st = "wd";
+
+        nd[normKey(found)] = { s: score, thru, rd: round, today, st, pos };
       });
-      if(Object.keys(nd).length>=8){setGd(nd);setLastUp(new Date().toISOString());}
-      else setErr(`Found ${Object.keys(nd).length}/20. ESPN may not have all scores yet.`);
-    }catch(e){setErr("ESPN fetch failed: "+e.message);}
+      const matched = Object.keys(nd).length;
+      if (matched >= 8) {
+        /* Merge with manual data: API overrides unless manual was explicitly set */
+        setGd(prev => {
+          const merged = { ...prev };
+          Object.keys(nd).forEach(k => { merged[k] = nd[k]; });
+          return merged;
+        });
+        setLastUp(new Date().toISOString());
+      } else {
+        setErr("Matched " + matched + "/20 golfers. Tournament may not be active yet or DataGolf data is limited.");
+      }
+    } catch (e) {
+      setErr("DataGolf fetch failed: " + e.message);
+    }
     setLoading(false);
-  },[]);
+  }, []);
 
-  const gg=n=>gd[nr(n)]||null;
-  const gs=n=>gg(n)?.s??null;
-  const gt=n=>gg(n)?.t??"";
-  const gst=n=>gg(n)?.st??"active";
-  const um=(n,f,v)=>setGd(p=>({...p,[nr(n)]:{...(p[nr(n)]||{s:0,t:"",st:"active",rd:1}),[f]:f==="s"?(v===""?0:parseInt(v)):v}}));
+  /* Data accessors */
+  const gg = n => gd[normKey(n)] || null;
+  const gs = n => gg(n)?.s ?? null;
+  const gthru = n => gg(n)?.thru ?? null;
+  const ground = n => gg(n)?.rd ?? null;
+  const gst = n => gg(n)?.st ?? "active";
 
-  const mres=i=>{
-    const m=MM[i],aS=gs(m.a),bS=gs(m.b),aO=gst(m.a)==="cut"||gst(m.a)==="wd",bO=gst(m.b)==="cut"||gst(m.b)==="wd";
-    if(aO&&bO)return{w:null,st:"dead"};
-    if(aO)return{w:m.b,ws:bS,st:"decided"};
-    if(bO)return{w:m.a,ws:aS,st:"decided"};
-    if(aS===null&&bS===null)return{w:null,st:"pre"};
-    if(aS===null||bS===null)return{w:null,st:"partial"};
-    if(aS<bS)return{w:m.a,ws:aS,st:"live"};
-    if(bS<aS)return{w:m.b,ws:bS,st:"live"};
-    return{w:null,st:"tied"};
+  /* Manual entry update */
+  const um = (n, f, v) => setGd(p => ({
+    ...p,
+    [normKey(n)]: {
+      ...(p[normKey(n)] || { s: 0, thru: 0, rd: 1, today: 0, st: "active", pos: "" }),
+      [f]: f === "s" ? (v === "" ? 0 : parseInt(v)) : f === "thru" ? (parseInt(v) || 0) : v
+    }
+  }));
+
+  /* ═══ MATCHUP RESULT LOGIC ═══ */
+  const mres = i => {
+    const m = MM[i];
+    const aS = gs(m.a), bS = gs(m.b);
+    const aO = gst(m.a) === "cut" || gst(m.a) === "wd";
+    const bO = gst(m.b) === "cut" || gst(m.b) === "wd";
+    if (aO && bO) return { w: null, st: "dead" };
+    if (aO) return { w: m.b, ws: bS, st: "decided" };
+    if (bO) return { w: m.a, ws: aS, st: "decided" };
+    if (aS === null && bS === null) return { w: null, st: "pre" };
+    if (aS === null || bS === null) return { w: null, st: "partial" };
+    if (aS < bS) return { w: m.a, ws: aS, st: "live" };
+    if (bS < aS) return { w: m.b, ws: bS, st: "live" };
+    return { w: null, st: "tied" };
   };
 
-  const ce=entry=>{
-    let tot=0,act=0,pnd=0,det=[];
-    entry.p.forEach((pk,i)=>{
-      const r=mres(i),pkO=gst(pk)==="cut"||gst(pk)==="wd",sc=gs(pk);
-      if(r.st==="pre"||r.st==="partial"){pnd++;det.push({st:"pnd",sc});}
-      else if(r.st==="dead"||pkO){det.push({st:"out"});}
-      else if(r.w&&mn(pk,r.w)){tot+=sc??0;act++;det.push({st:"act",sc});}
-      else if(r.st==="tied"){pnd++;det.push({st:"tie",sc});}
-      else{det.push({st:"los",sc});}
+  /* ═══ ENTRY SCORING ═══ */
+  const ce = entry => {
+    let tot = 0, act = 0, pnd = 0, det = [];
+    entry.p.forEach((pk, i) => {
+      const r = mres(i);
+      const pkO = gst(pk) === "cut" || gst(pk) === "wd";
+      const sc = gs(pk);
+      if (r.st === "pre" || r.st === "partial") { pnd++; det.push({ st: "pnd", sc }); }
+      else if (r.st === "dead" || pkO) { det.push({ st: "out" }); }
+      else if (r.w && mn(pk, r.w)) { tot += sc ?? 0; act++; det.push({ st: "act", sc }); }
+      else if (r.st === "tied") { pnd++; det.push({ st: "tie", sc }); }
+      else { det.push({ st: "los", sc }); }
     });
-    return{tot,act,pnd,det};
+    return { tot, act, pnd, det };
   };
 
-  const lb=EE.map(e=>({...e,...ce(e),my:MY.some(m=>m.toLowerCase()===e.t.toLowerCase())})).sort((a,b)=>a.tot-b.tot||b.act-a.act);
-  const getRank=(lb,idx)=>{const s=lb[idx].tot;let first=0;while(first<lb.length&&lb[first].tot<s)first++;const count=lb.filter(e=>e.tot===s).length;return{pos:first+1,tied:count>1};};
-  const myR=lb.filter(e=>e.my).map(e=>{const idx=lb.indexOf(e);const r=getRank(lb,idx);return{...e,rk:r.pos,tied:r.tied};});
-  const has=Object.keys(gd).length>0;
+  /* ═══ LEADERBOARD WITH TIED RANKINGS ═══ */
+  const lb = EE.map(e => ({
+    ...e, ...ce(e),
+    my: MY.some(m => m.toLowerCase() === e.t.toLowerCase())
+  })).sort((a, b) => a.tot - b.tot || b.act - a.act);
 
-  return React.createElement("div",null,
-    // Header
-    React.createElement("div",{className:"hdr"},
-      React.createElement("div",{className:"sub"},"The 2026 Masters Tournament"),
-      React.createElement("h1",null,"Augusta Command Center"),
-      React.createElement("div",{className:"info"},"53 entries · 10 matchups · lowest combined score wins")
+  /* Compute tied ranks: entries at same score share the same rank with "T" prefix */
+  const ranks = (() => {
+    const r = [];
+    let i = 0;
+    while (i < lb.length) {
+      let j = i;
+      while (j < lb.length && lb[j].tot === lb[i].tot) j++;
+      const count = j - i;
+      const pos = i + 1;
+      for (let k = i; k < j; k++) {
+        r.push({ pos, tied: count > 1 });
+      }
+      i = j;
+    }
+    return r;
+  })();
+
+  /* Find the rank threshold for top-3 highlighting (include all tied for 3rd) */
+  const top3Score = lb.length >= 3 ? lb[2].tot : null;
+
+  const myR = lb.map((e, idx) => ({ ...e, rk: ranks[idx].pos, tied: ranks[idx].tied, idx }))
+    .filter(e => e.my);
+
+  const has = Object.keys(gd).length > 0;
+
+  /* ═══ Thru display for matchup cards ═══ */
+  const thruLabel = name => {
+    const t = gthru(name);
+    const r = ground(name);
+    if (t === null || r === null) return null;
+    return fmtThru(r, t);
+  };
+
+  return React.createElement("div", null,
+    /* ═══ HEADER ═══ */
+    React.createElement("div", { className: "hdr" },
+      React.createElement("div", { className: "sub" }, "The 2026 Masters Tournament"),
+      React.createElement("h1", null, "Augusta Command Center"),
+      React.createElement("div", { className: "info" }, "53 entries \u00b7 10 matchups \u00b7 lowest combined score wins")
     ),
-    // Controls
-    React.createElement("div",{className:"controls"},
-      React.createElement("button",{className:"btn btn-gold",onClick:fetchS,disabled:loading},loading?"⏳ Fetching...":"⚡ Refresh Scores"),
-      React.createElement("button",{className:"btn btn-outline"+(auto?" active":""),onClick:()=>setAuto(!auto)},auto?"🔄 Auto ON":"Auto OFF"),
-      React.createElement("button",{className:"btn btn-outline"+(manual?" active":""),onClick:()=>setManual(!manual)},"✏️ Manual")
+
+    /* ═══ CONTROLS ═══ */
+    React.createElement("div", { className: "controls" },
+      React.createElement("button", { className: "btn btn-gold", onClick: fetchS, disabled: loading },
+        loading ? "\u23f3 Fetching..." : "\u26a1 Refresh Scores"),
+      React.createElement("button", {
+        className: "btn btn-outline" + (auto ? " active" : ""),
+        onClick: () => setAuto(!auto)
+      }, auto ? "\ud83d\udd04 Auto ON" : "Auto OFF"),
+      React.createElement("button", {
+        className: "btn btn-outline" + (manual ? " active" : ""),
+        onClick: () => setManual(!manual)
+      }, "\u270f\ufe0f Manual")
     ),
-    selE&&React.createElement("div",{style:{background:"rgba(197,165,90,0.12)",border:"1px solid rgba(197,165,90,0.3)",borderRadius:5,padding:"6px 12px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-      React.createElement("span",{style:{fontSize:12,color:"#C5A55A",fontWeight:600}},"Viewing: "+selE),
-      React.createElement("button",{onClick:()=>setSelE(null),style:{background:"none",border:"1px solid rgba(197,165,90,0.4)",borderRadius:3,color:"#C5A55A",fontSize:10,padding:"2px 8px",cursor:"pointer"}},"Clear")
+
+    /* ═══ SELECTED ENTRY BANNER ═══ */
+    selE && React.createElement("div", { className: "selbanner" },
+      React.createElement("span", { className: "seltxt" }, "Viewing: " + selE),
+      React.createElement("button", { className: "selbtn", onClick: () => setSelE(null) }, "Clear")
     ),
-    err&&React.createElement("div",{className:"err"},err),
-    lastUp&&React.createElement("div",{className:"updated"},"Updated: "+new Date(lastUp).toLocaleTimeString()),
-    // My Cards
-    has&&myR.length>0&&React.createElement("div",{className:"mycards"},
-      myR.map(e=>React.createElement("div",{key:e.t,className:"mycard"},
-        React.createElement("div",{className:"name"},e.t.split(" ").pop()),
-        React.createElement("div",{className:"score "+(e.tot<0?"neg":e.tot>0?"pos":"even")},fs(e.tot)),
-        React.createElement("div",{className:"meta"},
-          React.createElement("span",{className:"rank"},(e.tied?"T":"")+e.rk),
-          " · ",React.createElement("span",null,e.act+" active"),
-          e.pnd>0&&React.createElement("span",{style:{color:"rgba(245,240,225,0.3)"}}," · "+e.pnd+" pnd")
+
+    err && React.createElement("div", { className: "err" }, err),
+    lastUp && React.createElement("div", { className: "updated" }, "Updated: " + new Date(lastUp).toLocaleTimeString()),
+
+    /* ═══ MY 3 ENTRIES STATUS CARDS ═══ */
+    has && myR.length > 0 && React.createElement("div", { className: "mycards" },
+      myR.map(e => React.createElement("div", { key: e.t, className: "mycard" },
+        React.createElement("div", { className: "name" }, e.t.split(" ").pop()),
+        React.createElement("div", { className: "score " + (e.tot < 0 ? "neg" : e.tot > 0 ? "pos" : "even") }, fs(e.tot)),
+        React.createElement("div", { className: "meta" },
+          React.createElement("span", { className: "rank" }, (e.tied ? "T" : "") + e.rk),
+          " \u00b7 ", React.createElement("span", null, e.act + " active"),
+          e.pnd > 0 && React.createElement("span", { style: { color: "rgba(245,240,225,0.3)" } }, " \u00b7 " + e.pnd + " pnd")
         )
       ))
     ),
-    // Manual
-    manual&&React.createElement("div",{className:"manual"},
-      React.createElement("div",{className:"title"},"Manual Score Entry (score vs par, thru holes)"),
-      React.createElement("div",{className:"mgrid"},
-        MM.map(m=>React.createElement("div",{key:m.n,className:"mentry"},
-          React.createElement("span",{className:"ml"},"M"+m.n),
-          ...[m.a,m.b].map(name=>{
-            const st=gst(name),out=st!=="active";
-            return React.createElement("div",{key:name,style:{display:"flex",alignItems:"center",gap:2,flex:1}},
-              React.createElement("select",{value:st,onChange:e=>um(name,"st",e.target.value)},
-                React.createElement("option",{value:"active"},"OK"),
-                React.createElement("option",{value:"cut"},"MC"),
-                React.createElement("option",{value:"wd"},"WD")
+
+    /* ═══ MANUAL ENTRY PANEL ═══ */
+    manual && React.createElement("div", { className: "manual" },
+      React.createElement("div", { className: "title" }, "Manual Score Entry (score vs par, thru holes)"),
+      React.createElement("div", { className: "mgrid" },
+        MM.map(m => React.createElement("div", { key: m.n, className: "mentry" },
+          React.createElement("span", { className: "ml" }, "M" + m.n),
+          ...[m.a, m.b].map(name => {
+            const st = gst(name), out = st !== "active";
+            return React.createElement("div", { key: name, style: { display: "flex", alignItems: "center", gap: 2, flex: 1 } },
+              React.createElement("select", { value: st, onChange: e => um(name, "st", e.target.value) },
+                React.createElement("option", { value: "active" }, "OK"),
+                React.createElement("option", { value: "cut" }, "MC"),
+                React.createElement("option", { value: "wd" }, "WD")
               ),
-              React.createElement("span",{className:"gn"+(out?" out":"")},name.split(" ").pop()),
-              React.createElement("input",{type:"number",value:gs(name)??"",onChange:e=>um(name,"s",e.target.value),disabled:out,placeholder:"—"}),
-              React.createElement("input",{className:"thru",value:gt(name),onChange:e=>um(name,"t",e.target.value),disabled:out,placeholder:"t"})
+              React.createElement("span", { className: "gn" + (out ? " out" : "") }, name.split(" ").pop()),
+              React.createElement("input", { type: "number", value: gs(name) ?? "", onChange: e => um(name, "s", e.target.value), disabled: out, placeholder: "\u2014" }),
+              React.createElement("input", { className: "thru", value: gthru(name) ?? "", onChange: e => um(name, "thru", e.target.value), disabled: out, placeholder: "t" })
             );
           })
         ))
       )
     ),
-    // Matchup Cards
-    React.createElement("div",{className:"matchups"},
-      MM.map((m,i)=>{
-        const r=mres(i),fp=FP[i],dec=r.st==="decided",dead=r.st==="dead";
-        return React.createElement("div",{key:m.n,className:"mcard"+(dec?" decided":"")+(dead?" dead":"")},
-          React.createElement("div",{className:"mhdr"},
-            React.createElement("span",{className:"mnum"},"M"+m.n),
-            dec&&React.createElement("span",{className:"mst",style:{color:"var(--green)"}},"DECIDED"),
-            dead&&React.createElement("span",{className:"mst",style:{color:"var(--red)"}},"BOTH OUT"),
-            r.st==="live"&&React.createElement("span",{className:"mst",style:{color:"var(--gold)"}},"LIVE")
+
+    /* ═══ 10 MATCHUP CARDS ═══ */
+    React.createElement("div", { className: "matchups" },
+      MM.map((m, i) => {
+        const r = mres(i), fp = FP[i];
+        const dec = r.st === "decided", dead = r.st === "dead";
+        return React.createElement("div", {
+          key: m.n,
+          className: "mcard" + (dec ? " decided" : "") + (dead ? " dead" : "")
+        },
+          React.createElement("div", { className: "mhdr" },
+            React.createElement("span", { className: "mnum" }, "M" + m.n),
+            dec && React.createElement("span", { className: "mst", style: { color: "var(--green)" } }, "DECIDED"),
+            dead && React.createElement("span", { className: "mst", style: { color: "var(--red)" } }, "BOTH OUT"),
+            r.st === "live" && React.createElement("span", { className: "mst", style: { color: "var(--gold)" } }, "LIVE"),
+            r.st === "tied" && React.createElement("span", { className: "mst", style: { color: "var(--gold)" } }, "TIED")
           ),
-          [{nm:m.a,pct:fp.a},{nm:m.b,pct:fp.b}].map(({nm,pct})=>{
-            const isPicked=selE&&(()=>{const se=EE.find(e=>e.t===selE);return se&&mn(se.p[i],nm);})();
-            const sc=gs(nm),thru=gt(nm),isW=r.w&&mn(nm,r.w),out=gst(nm)==="cut"||gst(nm)==="wd";
-            return React.createElement("div",{key:nm,className:"mrow"+(isW?" winner":"")+(isPicked?" picked":""),style:{opacity:out?0.3:(!isW&&dec)?0.4:1}},
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:3,minWidth:0}},
-                isW&&React.createElement("span",{style:{fontSize:7,color:"var(--green)"}},"✓"),
-                React.createElement("span",{className:"pname"+(isW?" w":""),style:{color:out?"rgba(245,240,225,0.3)":undefined}},nm.split(" ").pop()+(out?" "+gst(nm).toUpperCase():""))
+          [{ nm: m.a, pct: fp.a }, { nm: m.b, pct: fp.b }].map(({ nm, pct }) => {
+            const isPicked = selE && (() => {
+              const se = EE.find(e => e.t === selE);
+              return se && mn(se.p[i], nm);
+            })();
+            const sc = gs(nm), tl = thruLabel(nm), isW = r.w && mn(nm, r.w);
+            const out = gst(nm) === "cut" || gst(nm) === "wd";
+            return React.createElement("div", {
+              key: nm,
+              className: "mrow" + (isW ? " winner" : "") + (isPicked ? " picked" : ""),
+              style: { opacity: out ? 0.3 : (!isW && dec) ? 0.4 : 1 }
+            },
+              React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 3, minWidth: 0 } },
+                isW && React.createElement("span", { style: { fontSize: 7, color: "var(--green)" } }, "\u2713"),
+                React.createElement("span", {
+                  className: "pname" + (isW ? " w" : ""),
+                  style: { color: out ? "rgba(245,240,225,0.3)" : undefined }
+                }, nm.split(" ").pop() + (out ? " " + gst(nm).toUpperCase() : ""))
               ),
-              React.createElement("div",{className:"pright"},
-                sc!==null&&!out&&React.createElement("span",{className:"pscore "+(sc<0?"neg":sc>0?"pos":"even")},fs(sc)),
-                thru&&!out&&React.createElement("span",{className:"pthru"},thru),
-                React.createElement("span",{className:"ppct"},pct+"%")
+              React.createElement("div", { className: "pright" },
+                sc !== null && !out && React.createElement("span", {
+                  className: "pscore " + (sc < 0 ? "neg" : sc > 0 ? "pos" : "even")
+                }, fs(sc)),
+                tl && !out && React.createElement("span", { className: "pthru" }, tl),
+                React.createElement("span", { className: "ppct" }, pct + "%")
               )
             );
           })
         );
       })
     ),
-    // Leaderboard
-    React.createElement("div",{style:{background:"rgba(0,0,0,0.25)",border:"1px solid rgba(245,240,225,0.06)",borderRadius:7,overflow:"hidden"}},
-      React.createElement("div",{style:{overflowX:"auto"}},
-        React.createElement("table",null,
-          React.createElement("thead",null,
-            React.createElement("tr",null,
-              React.createElement("th",{style:{width:28}},"#"),
-              React.createElement("th",{className:"team"},"TEAM"),
-              React.createElement("th",{className:"sc",style:{width:46}},"SCORE"),
-              React.createElement("th",{style:{width:28}},"A"),
-              ...MM.map(m=>React.createElement("th",{key:m.n,style:{width:30,fontSize:8}},"M"+m.n))
+
+    /* ═══ FULL 53-ENTRY LEADERBOARD ═══ */
+    React.createElement("div", {
+      style: { background: "rgba(0,0,0,0.25)", border: "1px solid rgba(245,240,225,0.06)", borderRadius: 7, overflow: "hidden" }
+    },
+      React.createElement("div", { style: { overflowX: "auto" } },
+        React.createElement("table", null,
+          React.createElement("thead", null,
+            React.createElement("tr", null,
+              React.createElement("th", { style: { width: 28 } }, "#"),
+              React.createElement("th", { className: "team" }, "TEAM"),
+              React.createElement("th", { className: "sc", style: { width: 46 } }, "SCORE"),
+              React.createElement("th", { style: { width: 28 } }, "A"),
+              ...MM.map(m => React.createElement("th", { key: m.n, style: { width: 30, fontSize: 8 } }, "M" + m.n))
             )
           ),
-          React.createElement("tbody",null,
-            lb.map((e,rk)=>{
-              const tiedRk=(()=>{let r=rk;while(r>0&&lb[r-1].tot===lb[rk].tot)r--;return r+1;})();const t3=tiedRk<=3;
-              return React.createElement("tr",{key:e.t,onClick:()=>setSelE(selE===e.t?null:e.t),style:{cursor:"pointer"},className:(e.my?"mine":"")+(t3?" top3":"")+(selE===e.t?" sel":"")},
-                React.createElement("td",{className:"rk"+(t3?" top3":"")},((rk>0&&lb[rk].tot===lb[rk-1].tot)?"T":(rk<lb.length-1&&lb[rk].tot===lb[rk+1].tot)?"T":"")+((()=>{let r=rk;while(r>0&&lb[r-1].tot===lb[rk].tot)r--;return r+1;})())),
-                React.createElement("td",{className:"tn"+(e.my?" mine":"")},e.my?"⭐ "+e.t:e.t),
-                React.createElement("td",{className:"sc "+(e.tot<0?"neg":e.tot>0?"pos":"even")},has?fs(e.tot):"—"),
-                React.createElement("td",{className:"act"},has?e.act:"—"),
-                ...e.det.map((d,di)=>React.createElement("td",{key:di,className:"cell"},
-                  d.st==="act"?React.createElement("span",{className:(d.sc<0?"neg":d.sc>0?"pos":"even"),style:{fontFamily:"'JetBrains Mono',monospace",fontWeight:600}},fs(d.sc))
-                  :d.st==="los"&&d.sc!==null?React.createElement("span",{style:{color:"var(--red)",opacity:0.4,fontSize:8,fontFamily:"'JetBrains Mono',monospace"}},fs(d.sc))
-                  :d.st==="tie"?React.createElement("span",{style:{color:"var(--gold)"}},"=")
-                  :d.st==="pnd"?React.createElement("span",{style:{color:"rgba(245,240,225,0.2)"}},"⏳")
-                  :React.createElement("span",{style:{color:"rgba(245,240,225,0.1)"}},"·")
+          React.createElement("tbody", null,
+            lb.map((e, idx) => {
+              const rk = ranks[idx];
+              const isTop3 = top3Score !== null && e.tot <= top3Score;
+              const rkLabel = (rk.tied ? "T" : "") + rk.pos;
+              return React.createElement("tr", {
+                key: e.t,
+                onClick: () => setSelE(selE === e.t ? null : e.t),
+                className: (e.my ? "mine" : "") + (isTop3 ? " top3" : "") + (selE === e.t ? " sel" : "")
+              },
+                React.createElement("td", { className: "rk" + (isTop3 ? " top3" : "") }, rkLabel),
+                React.createElement("td", { className: "tn" + (e.my ? " mine" : "") }, e.my ? "\u2b50 " + e.t : e.t),
+                React.createElement("td", { className: "sc " + (e.tot < 0 ? "neg" : e.tot > 0 ? "pos" : "even") }, has ? fs(e.tot) : "\u2014"),
+                React.createElement("td", { className: "act" }, has ? e.act : "\u2014"),
+                ...e.det.map((d, di) => React.createElement("td", { key: di, className: "cell" },
+                  d.st === "act" ? React.createElement("span", {
+                    className: (d.sc < 0 ? "neg" : d.sc > 0 ? "pos" : "even"),
+                    style: { fontFamily: "'JetBrains Mono',monospace", fontWeight: 600 }
+                  }, fs(d.sc))
+                  : d.st === "los" && d.sc !== null ? React.createElement("span", {
+                    style: { color: "var(--red)", opacity: 0.4, fontSize: 8, fontFamily: "'JetBrains Mono',monospace" }
+                  }, fs(d.sc))
+                  : d.st === "tie" ? React.createElement("span", { style: { color: "var(--gold)" } }, "=")
+                  : d.st === "pnd" ? React.createElement("span", { style: { color: "rgba(245,240,225,0.2)" } }, "\u23f3")
+                  : React.createElement("span", { style: { color: "rgba(245,240,225,0.1)" } }, "\u00b7")
                 ))
               );
             })
@@ -373,15 +530,16 @@ function App(){
         )
       )
     ),
-    // Legend
-    React.createElement("div",{className:"legend"},
-      React.createElement("span",null,React.createElement("span",{className:"neg"},"-5")," Activated"),
-      React.createElement("span",null,React.createElement("span",{style:{color:"var(--red)",opacity:0.4}},"+2")," Losing"),
-      React.createElement("span",null,"⏳ Pending"),
-      React.createElement("span",null,"· Out"),
-      React.createElement("span",null,"⭐ Yours")
+
+    /* ═══ LEGEND ═══ */
+    React.createElement("div", { className: "legend" },
+      React.createElement("span", null, React.createElement("span", { className: "neg" }, "-5"), " Activated"),
+      React.createElement("span", null, React.createElement("span", { style: { color: "var(--red)", opacity: 0.4 } }, "+2"), " Losing"),
+      React.createElement("span", null, "\u23f3 Pending"),
+      React.createElement("span", null, "\u00b7 Out"),
+      React.createElement("span", null, "\u2b50 Yours")
     ),
-    React.createElement("div",{className:"foot"},"Augusta Command Center · ESPN Live Data · kcdc29.github.io/masters-tracker")
+    React.createElement("div", { className: "foot" }, "Augusta Command Center \u00b7 DataGolf Live Data \u00b7 kcdc29.github.io/masters-tracker")
   );
 }
 
