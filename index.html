@@ -46,7 +46,7 @@ body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(180d
 .mrow .pname.w{font-weight:700;color:var(--green)}
 .mrow .pright{display:flex;align-items:center;gap:3px;flex-shrink:0}
 .mrow .pscore{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600}
-.mrow .pthru{font-size:7px;color:rgba(245,240,225,0.3)}
+.mrow .pthru{font-size:8px;color:rgba(245,240,225,0.45);font-family:"JetBrains Mono",monospace;background:rgba(245,240,225,0.06);padding:1px 4px;border-radius:3px}
 .mrow .ppct{font-size:7px;color:rgba(245,240,225,0.15);width:18px;text-align:right}
 .neg{color:var(--green)}.pos{color:var(--red)}.even{color:var(--cream)}
 table{width:100%;border-collapse:collapse;font-size:10px}
@@ -201,12 +201,19 @@ function App(){
         else if(typeof scoreStr==="string")score=parseInt(scoreStr)||0;
         else if(typeof scoreStr==="number")score=scoreStr;
         const status=c.status||{};
-        const thru=status.displayValue||status.thru||"";
         const cut=status.type?.description||"";
         let st="active";
         if(cut.toLowerCase().includes("cut"))st="cut";
         else if(cut.toLowerCase().includes("wd")||cut.toLowerCase().includes("withdraw"))st="wd";
-        nd[nr(found)]={s:score,t:thru,st};
+        const ls=c.linescores||[];
+        let curRound=1,holesPlayed=0,roundDone=false;
+        for(let ri=ls.length-1;ri>=0;ri--){
+          const rh=ls[ri].linescores||[];
+          const played=rh.filter(h=>h.value!=null).length;
+          if(played>0){curRound=ls[ri].period||ri+1;holesPlayed=played;roundDone=played>=18;break;}
+        }
+        const thru=roundDone?"F":holesPlayed>0?String(holesPlayed):"";
+        nd[nr(found)]={s:score,t:thru,st,rd:curRound};
       });
       if(Object.keys(nd).length>=8){setGd(nd);setLastUp(new Date().toISOString());}
       else setErr(`Found ${Object.keys(nd).length}/20. ESPN may not have all scores yet.`);
@@ -218,7 +225,7 @@ function App(){
   const gs=n=>gg(n)?.s??null;
   const gt=n=>gg(n)?.t??"";
   const gst=n=>gg(n)?.st??"active";
-  const um=(n,f,v)=>setGd(p=>({...p,[nr(n)]:{...(p[nr(n)]||{s:0,t:"",st:"active"}),[f]:f==="s"?(v===""?0:parseInt(v)):v}}));
+  const um=(n,f,v)=>setGd(p=>({...p,[nr(n)]:{...(p[nr(n)]||{s:0,t:"",st:"active",rd:1}),[f]:f==="s"?(v===""?0:parseInt(v)):v}}));
 
   const mres=i=>{
     const m=MM[i],aS=gs(m.a),bS=gs(m.b),aO=gst(m.a)==="cut"||gst(m.a)==="wd",bO=gst(m.b)==="cut"||gst(m.b)==="wd";
