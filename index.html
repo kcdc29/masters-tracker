@@ -209,7 +209,7 @@ const fmtThru = (round, thru) => {
 
 /* ═══ DATAGOLF API ═══ */
 const DG_RAW = "https://feeds.datagolf.com/preds/in-play?tour=pga&odds_format=percent&file_format=json&key=1bac751e7af9d758be30c2f87e37";
-const DG_URL = "https://corsproxy.io/?" + encodeURIComponent(DG_RAW);
+const DG_URL = "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(DG_RAW);
 
 function App() {
   const [gd, setGd] = useState({});
