@@ -40,6 +40,8 @@ body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(180d
 .mcard .mst{font-size:7px;font-weight:700;letter-spacing:0.5px}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:2px 3px;border-radius:3px;margin-bottom:1px}
 .mrow.winner{background:rgba(74,222,128,0.1)}
+.mrow.picked{background:rgba(197,165,90,0.18);border-left:2px solid #C5A55A}
+.mrow.picked.winner{background:linear-gradient(90deg,rgba(197,165,90,0.18),rgba(74,222,128,0.1))}
 .mrow .pname{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .pname.w{font-weight:700;color:var(--green)}
 .mrow .pright{display:flex;align-items:center;gap:3px;flex-shrink:0}
@@ -55,6 +57,8 @@ th.sc{color:var(--gold);font-weight:700}
 tbody tr{border-bottom:1px solid rgba(245,240,225,0.03);transition:background 0.15s}
 tbody tr.mine{background:rgba(197,165,90,0.08)}
 tbody tr.top3{background:rgba(74,222,128,0.02)}
+tbody tr.sel{background:rgba(197,165,90,0.15)!important;outline:1px solid rgba(197,165,90,0.4)}
+tbody tr{cursor:pointer}
 td{padding:5px 3px;text-align:center;font-size:10px}
 td.rk{font-family:'JetBrains Mono',monospace;color:rgba(245,240,225,0.3)}
 td.rk.top3{color:var(--gold);font-weight:700}
@@ -166,6 +170,7 @@ const ESPN_URL="https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboar
 
 function App(){
   const[gd,setGd]=useState({});
+  const[selE,setSelE]=useState(null);
   const[loading,setLoading]=useState(false);
   const[lastUp,setLastUp]=useState(null);
   const[err,setErr]=useState(null);
@@ -241,7 +246,8 @@ function App(){
   };
 
   const lb=EE.map(e=>({...e,...ce(e),my:MY.some(m=>m.toLowerCase()===e.t.toLowerCase())})).sort((a,b)=>a.tot-b.tot||b.act-a.act);
-  const myR=lb.filter(e=>e.my).map(e=>({...e,rk:lb.indexOf(e)+1}));
+  const getRank=(lb,idx)=>{const s=lb[idx].tot;let first=0;while(first<lb.length&&lb[first].tot<s)first++;const count=lb.filter(e=>e.tot===s).length;return{pos:first+1,tied:count>1};};
+  const myR=lb.filter(e=>e.my).map(e=>{const idx=lb.indexOf(e);const r=getRank(lb,idx);return{...e,rk:r.pos,tied:r.tied};});
   const has=Object.keys(gd).length>0;
 
   return React.createElement("div",null,
@@ -257,6 +263,10 @@ function App(){
       React.createElement("button",{className:"btn btn-outline"+(auto?" active":""),onClick:()=>setAuto(!auto)},auto?"🔄 Auto ON":"Auto OFF"),
       React.createElement("button",{className:"btn btn-outline"+(manual?" active":""),onClick:()=>setManual(!manual)},"✏️ Manual")
     ),
+    selE&&React.createElement("div",{style:{background:"rgba(197,165,90,0.12)",border:"1px solid rgba(197,165,90,0.3)",borderRadius:5,padding:"6px 12px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+      React.createElement("span",{style:{fontSize:12,color:"#C5A55A",fontWeight:600}},"Viewing: "+selE),
+      React.createElement("button",{onClick:()=>setSelE(null),style:{background:"none",border:"1px solid rgba(197,165,90,0.4)",borderRadius:3,color:"#C5A55A",fontSize:10,padding:"2px 8px",cursor:"pointer"}},"Clear")
+    ),
     err&&React.createElement("div",{className:"err"},err),
     lastUp&&React.createElement("div",{className:"updated"},"Updated: "+new Date(lastUp).toLocaleTimeString()),
     // My Cards
@@ -265,7 +275,7 @@ function App(){
         React.createElement("div",{className:"name"},e.t.split(" ").pop()),
         React.createElement("div",{className:"score "+(e.tot<0?"neg":e.tot>0?"pos":"even")},fs(e.tot)),
         React.createElement("div",{className:"meta"},
-          React.createElement("span",{className:"rank"},"#"+e.rk),
+          React.createElement("span",{className:"rank"},(e.tied?"T":"")+e.rk),
           " · ",React.createElement("span",null,e.act+" active"),
           e.pnd>0&&React.createElement("span",{style:{color:"rgba(245,240,225,0.3)"}}," · "+e.pnd+" pnd")
         )
@@ -305,8 +315,9 @@ function App(){
             r.st==="live"&&React.createElement("span",{className:"mst",style:{color:"var(--gold)"}},"LIVE")
           ),
           [{nm:m.a,pct:fp.a},{nm:m.b,pct:fp.b}].map(({nm,pct})=>{
+            const isPicked=selE&&(()=>{const se=EE.find(e=>e.t===selE);return se&&mn(se.p[i],nm);})();
             const sc=gs(nm),thru=gt(nm),isW=r.w&&mn(nm,r.w),out=gst(nm)==="cut"||gst(nm)==="wd";
-            return React.createElement("div",{key:nm,className:"mrow"+(isW?" winner":""),style:{opacity:out?0.3:(!isW&&dec)?0.4:1}},
+            return React.createElement("div",{key:nm,className:"mrow"+(isW?" winner":"")+(isPicked?" picked":""),style:{opacity:out?0.3:(!isW&&dec)?0.4:1}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:3,minWidth:0}},
                 isW&&React.createElement("span",{style:{fontSize:7,color:"var(--green)"}},"✓"),
                 React.createElement("span",{className:"pname"+(isW?" w":""),style:{color:out?"rgba(245,240,225,0.3)":undefined}},nm.split(" ").pop()+(out?" "+gst(nm).toUpperCase():""))
@@ -336,9 +347,9 @@ function App(){
           ),
           React.createElement("tbody",null,
             lb.map((e,rk)=>{
-              const t3=rk<3;
-              return React.createElement("tr",{key:e.t,className:(e.my?"mine":"")+(t3?" top3":"")},
-                React.createElement("td",{className:"rk"+(t3?" top3":"")},rk+1),
+              const tiedRk=(()=>{let r=rk;while(r>0&&lb[r-1].tot===lb[rk].tot)r--;return r+1;})();const t3=tiedRk<=3;
+              return React.createElement("tr",{key:e.t,onClick:()=>setSelE(selE===e.t?null:e.t),style:{cursor:"pointer"},className:(e.my?"mine":"")+(t3?" top3":"")+(selE===e.t?" sel":"")},
+                React.createElement("td",{className:"rk"+(t3?" top3":"")},((rk>0&&lb[rk].tot===lb[rk-1].tot)?"T":(rk<lb.length-1&&lb[rk].tot===lb[rk+1].tot)?"T":"")+((()=>{let r=rk;while(r>0&&lb[r-1].tot===lb[rk].tot)r--;return r+1;})())),
                 React.createElement("td",{className:"tn"+(e.my?" mine":"")},e.my?"⭐ "+e.t:e.t),
                 React.createElement("td",{className:"sc "+(e.tot<0?"neg":e.tot>0?"pos":"even")},has?fs(e.tot):"—"),
                 React.createElement("td",{className:"act"},has?e.act:"—"),
