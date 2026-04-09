@@ -161,9 +161,9 @@ const EE=[
 {t:"Wimbimlimbim",p:["Scottie Scheffler","Tommy Fleetwood","JJ Spaun","Collin Morikawa","Xander Schauffele","Chris Gotterup","Hideki Matsuyama","Justin Thomas","Ludvig Aberg","Harris English"]},
 ];
 
-const nr=n=>n.replace(/[^a-zA-Z]/g,"").toLowerCase();
+const nr=n=>n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z]/g,"").toLowerCase();
 const fs=s=>s===0?"E":s>0?"+"+s:""+s;
-const mn=(a,b)=>{const x=nr(a),y=nr(b);if(x===y)return true;return a.toLowerCase().split(" ").pop()===b.toLowerCase().split(" ").pop();};
+const mn=(a,b)=>{const x=nr(a),y=nr(b);if(x===y)return true;const la=nr(a.split(" ").pop()),lb=nr(b.split(" ").pop());return la===lb;};
 const FP=MM.map((_,i)=>{const ac=EE.filter(e=>mn(e.p[i],MM[i].a)).length;return{a:Math.round(ac/EE.length*100),b:Math.round((EE.length-ac)/EE.length*100)};});
 
 const ESPN_URL="https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
