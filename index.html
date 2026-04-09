@@ -182,11 +182,19 @@ const mn = (a, b) => {
   return lastA === lastB;
 };
 
-/* Field ownership percentages */
-const FP = MM.map((_, i) => {
-  const ac = EE.filter(e => mn(e.p[i], MM[i].a)).length;
-  return { a: Math.round(ac / EE.length * 100), b: Math.round((EE.length - ac) / EE.length * 100) };
-});
+/* Field ownership percentages (hardcoded from contest data) */
+const FP = [
+  {a:70,b:30},  // M1: Scheffler 70% / McIlroy 30%
+  {a:53,b:47},  // M2: Cam Young 53% / Fleetwood 47%
+  {a:21,b:79},  // M3: Spaun 21% / Fitzpatrick 79%
+  {a:38,b:62},  // M4: Morikawa 38% / MacIntyre 62%
+  {a:45,b:55},  // M5: Rose 45% / Schauffele 55%
+  {a:47,b:53},  // M6: Gotterup 47% / Henley 53%
+  {a:26,b:74},  // M7: Straka 26% / Matsuyama 74%
+  {a:68,b:32},  // M8: JT 68% / Griffin 32%
+  {a:83,b:17},  // M9: Aberg 83% / Bridgeman 17%
+  {a:32,b:68},  // M10: Noren 32% / English 68%
+];
 
 /* Format score vs par */
 const fs = s => s === 0 ? "E" : s > 0 ? "+" + s : "" + s;
@@ -200,7 +208,8 @@ const fmtThru = (round, thru) => {
 };
 
 /* ═══ DATAGOLF API ═══ */
-const DG_URL = "https://feeds.datagolf.com/preds/in-play?tour=pga&odds_format=percent&file_format=json&key=1bac751e7af9d758be30c2f87e37";
+const DG_RAW = "https://feeds.datagolf.com/preds/in-play?tour=pga&odds_format=percent&file_format=json&key=1bac751e7af9d758be30c2f87e37";
+const DG_URL = "https://corsproxy.io/?" + encodeURIComponent(DG_RAW);
 
 function App() {
   const [gd, setGd] = useState({});
