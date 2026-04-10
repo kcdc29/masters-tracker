@@ -44,8 +44,8 @@ body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(180d
 .mcard .mst{font-size:7px;font-weight:700;letter-spacing:0.5px}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:2px 3px;border-radius:3px;margin-bottom:1px}
 .mrow.winner{background:rgba(74,222,128,0.1)}
-.mrow.picked{background:rgba(197,165,90,0.18);border-left:2px solid #C5A55A}
-.mrow.picked.winner{background:linear-gradient(90deg,rgba(197,165,90,0.18),rgba(74,222,128,0.1))}
+.mrow.picked{background:rgba(197,165,90,0.22);border-left:3px solid #C5A55A}
+.mrow.picked.winner{background:linear-gradient(90deg,rgba(197,165,90,0.22),rgba(74,222,128,0.12));border-left:3px solid #C5A55A}
 .mrow .pname{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .pname.w{font-weight:700;color:var(--green)}
 .mrow .pright{display:flex;align-items:center;gap:3px;flex-shrink:0}
@@ -481,10 +481,15 @@ function App() {
               style: { opacity: out ? 0.3 : (!isW && dec) ? 0.4 : 1 }
             },
               React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 3, minWidth: 0 } },
-                isW && React.createElement("span", { style: { fontSize: 7, color: "var(--green)" } }, "\u2713"),
+                isPicked && React.createElement("span", { style: {
+                  fontSize: 7, fontWeight: 700, color: "var(--bg)", background: "var(--gold)",
+                  padding: "1px 3px", borderRadius: 2, letterSpacing: 0.5, lineHeight: 1, flexShrink: 0
+                } }, "PICK"),
+                isW && !isPicked && React.createElement("span", { style: { fontSize: 7, color: "var(--green)" } }, "\u2713"),
                 React.createElement("span", {
                   className: "pname" + (isW ? " w" : ""),
-                  style: { color: out ? "rgba(245,240,225,0.3)" : undefined }
+                  style: { color: isPicked && !isW ? "var(--gold)" : out ? "rgba(245,240,225,0.3)" : undefined,
+                           fontWeight: isPicked ? 700 : undefined }
                 }, nm.split(" ").pop() + (out ? " " + gst(nm).toUpperCase() : ""))
               ),
               React.createElement("div", { className: "pright" },
