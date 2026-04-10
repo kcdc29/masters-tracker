@@ -335,22 +335,30 @@ function App() {
       else if (r.st === "tied") { pnd++; det.push({ st: "tie", sc }); }
       else { det.push({ st: "los", sc }); }
     });
-    return { tot, act, pnd, det };
+    /* Tiebreaker: sum of top 5 (lowest) individual golfer scores.
+       Cut/WD golfers get +999 so they sort to the bottom. */
+    const allScores = entry.p.map(pk => {
+      const out = gst(pk) === "cut" || gst(pk) === "wd";
+      if (out) return 999;
+      return gs(pk) ?? 999;
+    }).sort((a, b) => a - b);
+    const tb5 = allScores.slice(0, 5).reduce((s, v) => s + v, 0);
+    return { tot, act, pnd, det, tb5 };
   };
 
   /* ═══ LEADERBOARD WITH TIED RANKINGS ═══ */
   const lb = EE.map(e => ({
     ...e, ...ce(e),
     my: MY.some(m => m.toLowerCase() === e.t.toLowerCase())
-  })).sort((a, b) => a.tot - b.tot || b.act - a.act);
+  })).sort((a, b) => a.tot - b.tot || a.tb5 - b.tb5 || b.act - a.act);
 
-  /* Compute tied ranks: entries at same score share the same rank with "T" prefix */
+  /* Compute tied ranks: entries at same score AND same tiebreaker share rank with "T" prefix */
   const ranks = (() => {
     const r = [];
     let i = 0;
     while (i < lb.length) {
       let j = i;
-      while (j < lb.length && lb[j].tot === lb[i].tot) j++;
+      while (j < lb.length && lb[j].tot === lb[i].tot && lb[j].tb5 === lb[i].tb5) j++;
       const count = j - i;
       const pos = i + 1;
       for (let k = i; k < j; k++) {
@@ -504,6 +512,7 @@ function App() {
               React.createElement("th", { className: "team" }, "TEAM"),
               React.createElement("th", { className: "sc", style: { width: 46 } }, "SCORE"),
               React.createElement("th", { style: { width: 28 } }, "A"),
+              React.createElement("th", { style: { width: 32, fontSize: 8 }, title: "Tiebreaker: sum of top 5 golfer scores" }, "TB"),
               ...MM.map(m => React.createElement("th", { key: m.n, style: { width: 30, fontSize: 8 } }, "M" + m.n))
             )
           ),
@@ -521,6 +530,7 @@ function App() {
                 React.createElement("td", { className: "tn" + (e.my ? " mine" : "") }, e.my ? "\u2b50 " + e.t : e.t),
                 React.createElement("td", { className: "sc " + (e.tot < 0 ? "neg" : e.tot > 0 ? "pos" : "even") }, has ? fs(e.tot) : "\u2014"),
                 React.createElement("td", { className: "act" }, has ? e.act : "\u2014"),
+                React.createElement("td", { className: "act", style: { fontSize: 9 } }, has && e.tb5 < 4000 ? fs(e.tb5) : "\u2014"),
                 ...e.det.map((d, di) => React.createElement("td", { key: di, className: "cell" },
                   d.st === "act" ? React.createElement("span", {
                     className: (d.sc < 0 ? "neg" : d.sc > 0 ? "pos" : "even"),
